@@ -9,16 +9,18 @@ import { deleteLocalFile } from "../utils/deleteLocalFile.js";
 
 const registerUser = asyncHandler(async (req, res) => {
     // get user details from frontend
-    // validation - not empty
+    // validation - data not empty
+    // check for images, if avatar available
     // check if user already exists: username, email
-    // check for images, check for avatar
-    // upload them to cloudinary, avatar
+    // upload them to cloudinary: avatar and coverImage
     // create user object - create entry in db
-    // remove password and refresh token field from response
     // check for user creation
+    // remove password and refresh token field from response
     // return res
 
     const { fullName, username, email, password } = req.body;
+    const avatarLocalPath = req.files?.avatar?.length > 0 ? req.files.avatar[0].path : null;
+    const coverImageLocalPath = req.files?.coverImage?.length > 0 ? req.files.coverImage[0].path : null;
 
     if (
         [fullName, username, email, password].some((field) => {
@@ -28,8 +30,10 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new apiError(400, "All fields are required!");
     }
 
-    const avatarLocalPath = req.files?.avatar?.length > 0 ? req.files.avatar[0].path : null;
-    const coverImageLocalPath = req.files?.coverImage?.length > 0 ? req.files.coverImage[0].path : null;
+    if (!avatarLocalPath) {
+        deleteLocalFile(coverImageLocalPath);
+        throw new apiError(400, "Avatar file is required")
+    }
 
     // check if username or email exists in db
     const userExisted = await User.findOne({ $or: [{ username }, { email }] });
@@ -45,11 +49,7 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new apiError(409, "User with email or username already exists!");
     }
 
-    if (!avatarLocalPath) {
-        deleteLocalFile(coverImageLocalPath);
-        throw new apiError(400, "Avatar file is required")
-    }
-
+    // upload files on cloudinary
     const avatar = await uploadOnCloudinary(avatarLocalPath);
     const coverImage = coverImageLocalPath ? await uploadOnCloudinary(coverImageLocalPath) : null;
 
@@ -62,6 +62,7 @@ const registerUser = asyncHandler(async (req, res) => {
         coverImage: coverImage?.secure_url || null,
     });
 
+    // check user is saved in db, remove password and refreshToken from response data
     const userCreatedInDB = await User.findById(user._id).select("-password -refreshToken");
 
     if(!userCreatedInDB){
