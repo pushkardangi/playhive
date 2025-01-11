@@ -12,15 +12,15 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-app.use(express.static("public"));
+app.use(express.static("public")); // make files in the public folder accessible via HTTP requests
 app.use(cookieParser());
 
 // importing routes
 import userRouter from "./routes/user.routes.js";
 
 // declaring routes
+// http://localhost:3000/api/v1/users
 app.use("/api/v1/users", userRouter);
 
-// http://localhost:3000/users/register
 
 export default app;
