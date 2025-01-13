@@ -255,4 +255,45 @@ const changeCurrentPassword = asyncHandler ( async (req, res) => {
     }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword };
+const getCurrentUser = asyncHandler( async (req, res) => {
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(200, req.user, "Current user fetched successfully.")
+        );
+});
+
+const updateUserProfile = asyncHandler (async (req, res) => {
+
+    const { email, fullName } = req.body;
+
+    if(!email || !fullName){
+        throw new apiError(400, "Required fields (Email or Full Name) are missing!");
+    }
+
+    const user = User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                email,
+                fullName,
+            },
+        },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    return res
+        .status(200)
+        .json(new apiResponse(200, user, "User data updated successfully."));
+});
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateUserProfile
+};
