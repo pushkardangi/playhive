@@ -7,7 +7,6 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteLocalFile } from "../utils/deleteLocalFile.js";
 import jwt from "jsonwebtoken";
-import cookieParser from "cookie-parser";
 
 // returns access token and refresh token, save the refresh token in db
 const generateAccessAndRefreshTokens = async (userId) => {
