@@ -215,4 +215,44 @@ const refreshAccessToken = asyncHandler( async (req, res) => {
 
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const changeCurrentPassword = asyncHandler ( async (req, res) => {
+
+    // todo:
+    // get current and new password from the user
+    // validate fields for falsy values
+    // compare the incoming current password and password in db - bcrypt
+    // update the password
+
+    try {
+        const {currentPassword, newPassword} = req.body;
+
+        if(!currentPassword || !newPassword){
+            throw new apiError(400, "Required fields (current password or new password) are missing!");
+        }
+
+        if(newPassword.trim().split("").length < 8){
+            throw new apiError(400, "Password length is less than 8! Please choose a strong password!");
+        }
+
+        const user = await User.findById(req.user?._id);
+
+        const isCurrentPasswordCorrect = await user.isPasswordCorrect(currentPassword);
+
+        if(!isCurrentPasswordCorrect){
+            throw new apiError(400, "Current password is incorrect!");
+        }
+
+        user.password = newPassword;
+
+        await user.save({validateBeforeSave: false});
+
+        return res
+            .status(200)
+            .json(new apiResponse(200, {}, "Password changed successfully."));
+
+    } catch (error) {
+        throw new apiError(400, `Error while changing password! ${error.message}`)
+    }
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword };
