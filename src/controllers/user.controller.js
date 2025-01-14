@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary, deleteFileOnCloudinary } from "../utils/cloudinary.js";
 import { deleteLocalFile } from "../utils/deleteLocalFile.js";
 import jwt from "jsonwebtoken";
 
@@ -77,7 +77,9 @@ const registerUser = asyncHandler(async (req, res) => {
         email,
         password,
         avatar: avatar.secure_url,
+        avatarPublicId: avatar.public_id,
         coverImage: coverImage?.secure_url || null,
+        coverImagePublicId: coverImage?.public_id || null,
     });
 
     // check user is saved in db, remove password and refreshToken from response data
@@ -288,6 +290,51 @@ const updateUserProfile = asyncHandler (async (req, res) => {
         .json(new apiResponse(200, user, "User data updated successfully."));
 });
 
+const updateAvatar = asyncHandler (async (req, res)=> {
+
+    // todo:
+    // get new avatar from the user
+    // check if required data is Empty
+
+    try {
+        const user = req.user;
+
+        const avatarLocalPath = req.file?.path?.length > 0 ? req.file.path : null;
+
+        console.log("avatar local file path",avatarLocalPath)
+
+        if (!avatarLocalPath) {
+            throw new apiError(400, "Avatar file is missing!");
+        }
+
+        // delete the old avatar from cloudinary, if available
+
+        if (user.avatarPublicId) {
+            await deleteFileOnCloudinary(user.avatarPublicId);
+        }
+
+        // upload and save the new avatar
+
+        const newAvatar = await uploadOnCloudinary(avatarLocalPath);
+
+        if(!newAvatar){
+            throw new apiError(400, "Error while uploading avatar on cloudinary!");
+        }
+
+        user.avatar = newAvatar.secure_url;
+        user.avatarPublicId = newAvatar.public_id;
+
+        user.save({validateBeforeSave: false});
+
+        return res
+            .status(200)
+            .json(new apiResponse(200, user, "Avatar updated successfully."));
+
+    } catch (error) {
+        throw new apiError(400, `Error while updating avatar: ${error}`)
+    }
+});
+
 export {
     registerUser,
     loginUser,
@@ -295,5 +342,6 @@ export {
     refreshAccessToken,
     changeCurrentPassword,
     getCurrentUser,
-    updateUserProfile
+    updateUserProfile,
+    updateAvatar,
 };
