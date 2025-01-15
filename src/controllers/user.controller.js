@@ -333,6 +333,45 @@ const updateAvatar = asyncHandler (async (req, res)=> {
     }
 });
 
+const updateCoverImage = asyncHandler (async (req, res)=> {
+
+    try {
+        const user = req.user;
+
+        const coverImageLocalPath = req.file?.path?.length > 0 ? req.file.path : null;
+
+        if (!coverImageLocalPath) {
+            throw new apiError(400, "Cover Image file is missing!");
+        }
+
+        // delete the old cover image from cloudinary, if available
+
+        if (user.coverImagePublicId) {
+            await deleteFileOnCloudinary(user.coverImagePublicId);
+        }
+
+        // upload and save the new cover image
+
+        const newCoverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+        if(!newCoverImage){
+            throw new apiError(400, "Error while uploading cover image on cloudinary!");
+        }
+
+        user.coverImage = newCoverImage.secure_url;
+        user.coverImagePublicId = newCoverImage.public_id;
+
+        user.save({validateBeforeSave: false});
+
+        return res
+            .status(200)
+            .json(new apiResponse(200, user, "Cover Image updated successfully."));
+
+    } catch (error) {
+        throw new apiError(400, `Error while updating Cover Image: ${error}`)
+    }
+});
+
 export {
     registerUser,
     loginUser,
@@ -342,4 +381,5 @@ export {
     getCurrentUser,
     updateUserProfile,
     updateAvatar,
+    updateCoverImage
 };

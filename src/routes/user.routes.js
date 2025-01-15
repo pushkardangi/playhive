@@ -13,6 +13,7 @@ import {
     getCurrentUser,
     updateUserProfile,
     updateAvatar,
+    updateCoverImage,
 } from "../controllers/user.controller.js";
 
 // middlewares
@@ -37,6 +38,7 @@ router.route("/change-password").post(verifyJWT, changeCurrentPassword);
 router.route("/get-user").get(verifyJWT, getCurrentUser);
 router.route("/update-profile").post(verifyJWT, updateUserProfile);
 router.route("/update-avatar").post(verifyJWT, upload.single("avatar"), updateAvatar);
+router.route("/update-cover-image").post(verifyJWT, upload.single("coverImage"), updateCoverImage);
 
 export default router;
 
