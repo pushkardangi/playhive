@@ -372,6 +372,85 @@ const updateCoverImage = asyncHandler (async (req, res)=> {
     }
 });
 
+const getChannelProfile = asyncHandler(async (req, res) => {
+
+    let { username } = req.params;
+
+    username = username?.trim().toLowerCase();
+
+    if(!username){
+        throw new apiError(400, "Username is missing!")
+    }
+
+    const channel = await User.aggregate([
+        {
+            $match: {
+                username: username
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribedBy"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        {
+            $addFields: {
+                subscribedByCount: {
+                    $size: "$subscribedBy"
+                },
+                subscribedToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {
+                            $in: [req.user?._id, "$subscribedBy.subscriber"]
+                        },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                username: 1,
+                fullName: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1,
+                subscribedByCount: 1,
+                subscribedToCount: 1,
+                isSubscribed: 1,
+            }
+
+        }
+    ]);
+
+    // console.log("Channel Data:", channel);
+
+    if(!channel?.length){
+        throw new apiError(404, "Channel does not exists!");
+    }
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(200, channel[0], "User channel fetched successfully.")
+        );
+});
+
 export {
     registerUser,
     loginUser,
@@ -381,5 +460,6 @@ export {
     getCurrentUser,
     updateUserProfile,
     updateAvatar,
-    updateCoverImage
+    updateCoverImage,
+    getChannelProfile,
 };
