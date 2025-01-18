@@ -15,6 +15,7 @@ import {
     updateAvatar,
     updateCoverImage,
     getChannelProfile,
+    getWatchHistory,
 } from "../controllers/user.controller.js";
 
 // middlewares
@@ -41,6 +42,7 @@ router.route("/update-profile").patch(verifyJWT, updateUserProfile);
 router.route("/update-avatar").patch(verifyJWT, upload.single("avatar"), updateAvatar);
 router.route("/update-cover-image").patch(verifyJWT, upload.single("coverImage"), updateCoverImage);
 router.route("/channel-profile/:username").get(verifyJWT, getChannelProfile);
+router.route("/watch-history").get(verifyJWT, getWatchHistory);
 
 export default router;
 
