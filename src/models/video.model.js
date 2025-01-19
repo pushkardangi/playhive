@@ -24,9 +24,12 @@ const videoSchema = new Schema(
             required: true,
         },
         duration: {
-            type: Number,
+            type: String, // in HH:MM:SS
             required: true,
-            min: 0,
+        },
+        size: {
+            type: Number, // in MB
+            required: true,
         },
         views: {
             type: Number,
