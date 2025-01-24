@@ -70,6 +70,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     // send the data
 
     const { videoId } = req.params;
+    const user = req.user;
 
     try {
         if (!videoId) {
@@ -95,6 +96,17 @@ const getVideoById = asyncHandler(async (req, res) => {
             ...video._doc,
             owner: { ...owner._doc }
         };
+
+       // Add video to the watch history if it doesn't already exist
+        if (!user.watchHistory.includes(videoId)) {
+            user.watchHistory.push(videoId);
+
+            const addedInWatchHistory = await user.save({ validateBeforeSave: false });
+
+            if (!addedInWatchHistory) {
+                throw new apiError(500, "Failed to add video in watch history!");
+            }
+        }
 
         res.status(200).json(
             new apiResponse(
