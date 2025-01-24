@@ -1,5 +1,6 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
+import { User } from "../models/user.model.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -62,8 +63,49 @@ const getAllVideos = asyncHandler(async (req, res) => {
 });
 
 const getVideoById = asyncHandler(async (req, res) => {
-    const { videoId } = req.params;
     //TODO: get video by id
+    // get video id from the request
+    // find the video
+    // check isPublished
+    // send the data
+
+    const { videoId } = req.params;
+
+    try {
+        if (!videoId) {
+            throw new apiError(400, "Required fields (VideoId) is missing!");
+        }
+
+        const video = await Video.findById(videoId).select("-_id");
+
+        if (!video) {
+            throw new apiError(400, "Video is not found!");
+        }
+        if (!video?.isPublished) {
+            throw new apiError(400, "Video is Hidden by the owner!");
+        }
+
+        const owner = await User.findById(video.owner).select("-_id username fullName avatar");
+
+        if (!owner) {
+            throw new apiError(404, "Owner information not found.");
+        }
+
+        const responseData = {
+            ...video._doc,
+            owner: { ...owner._doc }
+        };
+
+        res.status(200).json(
+            new apiResponse(
+                200,
+                responseData,
+                "Successfully fetched video."
+            )
+        );
+    } catch (error) {
+        throw new apiError(500, `Error while fetching requested Video: ${error?.message}`);
+    }
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
