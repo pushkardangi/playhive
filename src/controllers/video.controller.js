@@ -166,8 +166,43 @@ const updateVideo = asyncHandler(async (req, res) => {
 });
 
 const deleteVideo = asyncHandler(async (req, res) => {
-    const { videoId } = req.params;
     //TODO: delete video
+    // get videoId and fetch video from db
+    // extract video and thumbnail public id and remove them from cloudinary
+    // delete video document from db
+    // send success reponse
+
+    const { videoId } = req.params;
+
+    if (!videoId) {
+        throw new apiError(400, "Video id not found!");
+    }
+
+    const video = await Video.findById(videoId);
+
+    if (!video) {
+        throw new apiError(400, "Video not found in DB!");
+    }
+
+    const videoPublicId = video.videoFile.split("/").pop().split(".")[0];
+    const thumbnailPublicId = video.thumbnail.split("/").pop().split(".")[0];
+
+    const deleteVideo = await deleteFileOnCloudinary(videoPublicId, "video");
+    const deleteThumbnail = await deleteFileOnCloudinary(thumbnailPublicId, "image");
+
+    if (!deleteVideo || !deleteThumbnail) {
+        throw new apiError(500, "Failed to delete Video on Cloudinary!");
+    }
+
+    const deleteVideoDocument = await Video.findByIdAndDelete(videoId);
+
+    if (!deleteVideoDocument) {
+        throw new apiError(400, "Failed to delete the video document!");
+    }
+
+    res.status(200).json(
+        new apiResponse(200, {}, "Video deleted Successfully.")
+    );
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
