@@ -63,6 +63,30 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
 const updateTweet = asyncHandler(async (req, res) => {
     //TODO: update tweet
+    const { tweetId } = req?.params;
+    const { updatedTweet: content } = req?.body;
+
+    if (!tweetId) {
+      throw new apiError(400, "Tweet ID is required!");
+    }
+
+    if (!content) {
+      throw new apiError(400, "New content for updating tweet is missing!");
+    }
+
+    const updatedTweet = await Tweet.findByIdAndUpdate(
+        tweetId,
+        { content },
+        { new: true }
+    );
+
+    if (!updatedTweet) {
+      throw new apiError(500, "Failed to update tweet!");
+    }
+
+    res.status(200).json(
+        new apiResponse(200, updatedTweet, "Tweet updated successfully.")
+    );
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {

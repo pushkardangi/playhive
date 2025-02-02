@@ -14,6 +14,10 @@ router
     .route("/")
     .post(createTweet)
     .get(getUserTweets);
-router.route("/:tweetId").patch(updateTweet).delete(deleteTweet);
+
+router
+    .route("/:tweetId")
+    .patch(updateTweet)
+    .delete(deleteTweet);
 
 export default router;
