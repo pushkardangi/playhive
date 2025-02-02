@@ -17,7 +17,7 @@ const createTweet = asyncHandler(async (req, res) => {
       throw new apiError(400, "Tweet content not available!");
     }
 
-    const tweetSaved = await Tweet.create({tweet, owner});
+    const tweetSaved = await Tweet.create({ content: tweet, owner });
 
     if (!tweetSaved) {
       throw new apiError(500, "Failed to save the tweet!");
@@ -30,6 +30,35 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
     // TODO: get user tweets
+    const { userid: userId, page = 1, limit = 10 } = req?.query;
+
+    if (!userId) {
+      throw new apiError(400, "User Id is missing!");
+    }
+
+    const filter = userId ? { owner: userId } : {};
+
+    const tweets = await Tweet.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(Number(limit));
+
+    if (!tweets) {
+      throw new apiError(500, "Failed in fetching tweets!");
+    }
+
+    const totalTweets = await Tweet.countDocuments(userId);
+
+    res.status(200).json(
+        new apiResponse(
+            200,
+            {
+                tweets,
+                hasMoreTweets: totalTweets > page * limit,
+            },
+            "Tweets fetched successfully."
+        )
+    );
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
